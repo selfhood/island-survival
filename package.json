@@ -1,0 +1,15 @@
+{
+  "name": "island-survival-3d",
+  "version": "1.0.0",
+  "description": "무인도 표류 — 서버가 규칙을 실행하고 브라우저가 Three.js 3D로 보여주는 생존 어드벤처",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-start-stats.js && node test-recovery-balance.js && node test-cave-food.js && node test-cold-boar-balance.js && node test-bot.js 40"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

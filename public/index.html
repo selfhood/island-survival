@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>무인도 표류 — 생존기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="game3d" aria-label="3D 섬 월드"></canvas>
+  <div id="danger-vignette"></div>
+  <div id="hurt-flash"></div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="app">
+    <!-- 타이틀 -->
+    <section id="screen-title" class="screen active">
+      <div class="title-stage">
+        <svg class="title-art" viewBox="0 0 400 140" aria-hidden="true">
+          <defs><linearGradient id="tSun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#ff9a5a"/></linearGradient></defs>
+          <circle class="ta-glow" cx="290" cy="64" r="64" fill="#ffe9a8" opacity=".25"/>
+          <circle class="ta-sun" cx="290" cy="64" r="34" fill="url(#tSun)"/>
+          <path d="M0 98q50-6 100 0t100 0 100 0 100 0V140H0z" fill="#0f5c70" opacity=".75"/>
+          <path class="ta-wave" d="M-40 106q25-7 50 0t50 0 50 0 50 0 50 0 50 0 50 0 50 0 50 0" stroke="#f3efe6" stroke-opacity=".55" fill="none" stroke-width="2"/>
+          <path d="M110 102q32-30 66-24t54 24z" fill="#10382e"/>
+          <path d="M160 82q3-22 8-38" stroke="#10382e" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M168 44q-14-3-22 6M168 44q-8-12-22-10M168 44q4-12 14-14M168 44q14-6 24 2M168 44q12 4 16 14" stroke="#10382e" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+          <path d="M60 118l26-4 6 8-30 4z" fill="#3a2a1e" opacity=".85"/><path d="M76 114l1-16 12 14z" fill="#f3efe6" opacity=".8"/>
+        </svg>
+        <p class="brand">무인도 표류</p>
+        <h1 class="headline">생존기</h1>
+        <p class="lede">배가 가라앉았다. 남은 것은 당신과 섬뿐이다.</p>
+        <div class="cta-row">
+          <button type="button" class="btn primary" id="btn-new">새 생존 시작</button>
+          <button type="button" class="btn ghost" id="btn-title-load">불러오기</button>
+          <button type="button" class="btn ghost" id="btn-gallery">엔딩 도감</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 플레이 -->
+    <section id="screen-play" class="screen">
+      <header class="hud">
+        <div class="hud-day">
+          <span class="hud-label">Day</span>
+          <strong id="stat-day">1</strong>
+          <span class="hud-score" title="엔딩 보너스는 결말에서 더해집니다">점수 <b id="stat-score">0</b></span>
+        </div>
+        <div class="bars">
+          <div class="bar" title="체력">
+            <span class="bar-label">체력</span>
+            <div class="bar-track"><i id="bar-hp"></i></div>
+            <span class="bar-val" id="stat-hp">100</span>
+          </div>
+          <div class="bar" title="포만 (낮을수록 위험)">
+            <span class="bar-label">포만</span>
+            <div class="bar-track"><i id="bar-hunger"></i></div>
+            <span class="bar-val" id="stat-hunger">75</span>
+          </div>
+          <div class="bar" title="수분 (낮을수록 위험)">
+            <span class="bar-label">수분</span>
+            <div class="bar-track"><i id="bar-thirst"></i></div>
+            <span class="bar-val" id="stat-thirst">70</span>
+          </div>
+          <div class="bar" title="정신력">
+            <span class="bar-label">정신</span>
+            <div class="bar-track"><i id="bar-sanity"></i></div>
+            <span class="bar-val" id="stat-sanity">80</span>
+          </div>
+        </div>
+        <div class="hud-actions">
+          <button type="button" class="btn tiny" id="btn-save">저장</button>
+          <button type="button" class="btn tiny ghost" id="btn-load">불러오기</button>
+          <button type="button" class="btn tiny ghost" id="btn-speed">글자 속도: 보통</button>
+          <button type="button" class="btn tiny ghost" id="btn-sound">효과음: 켬</button>
+          <button type="button" class="btn tiny ghost" id="btn-view">시점: 3인칭 (V)</button>
+          <button type="button" class="btn tiny ghost" id="btn-panel">정보 패널</button>
+          <button type="button" class="btn tiny exit-btn" id="btn-exit">게임 종료</button>
+        </div>
+      </header>
+
+      <div id="interact-hint" class="interact-hint"></div>
+      <div id="controls-help" class="controls-help" title="클릭하면 닫힙니다">
+        <b>이동</b> WASD / 방향키 (Shift: 달리기)<br>
+        <b>시점</b> 드래그 회전 · 휠 줌 · Q/R 회전 · <b>V</b> 시점 전환<br>
+        <b>장소 메뉴</b> 장소(빛기둥) 안에 서 있을 때만 열려요<br>
+        <b>장소 이동</b> 지도의 장소 클릭 · 직접 걸어가 멈춰 서기 · 빛기둥 근처에서 <b>E</b><br>
+        <b>땅 클릭</b> 그곳으로 걸어가기
+      </div>
+      <div class="play-layout">
+        <aside class="inventory-panel">
+          <section class="map-panel" id="map-panel">
+            <h2>섬 지도</h2>
+            <svg id="island-map" class="map-svg" viewBox="0 0 300 230" role="img" aria-label="섬 지도">
+              <defs>
+                <radialGradient id="mSea" cx="50%" cy="48%" r="75%"><stop offset="0" stop-color="#3aa6b6"/><stop offset=".55" stop-color="#1b7089"/><stop offset="1" stop-color="#0a3547"/></radialGradient>
+                <linearGradient id="mSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7e8c0"/><stop offset="1" stop-color="#d6b274"/></linearGradient>
+                <radialGradient id="mJungle" cx="50%" cy="42%" r="62%"><stop offset="0" stop-color="#63bb86"/><stop offset="1" stop-color="#22664a"/></radialGradient>
+                <linearGradient id="mRock" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c3c8cf"/><stop offset="1" stop-color="#666c75"/></linearGradient>
+                <filter id="mBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
+              </defs>
+              <rect width="300" height="230" fill="url(#mSea)"/>
+              <path d="M60 120C48 70 92 30 150 28c66-2 108 42 114 92 6 46-22 86-74 90-40 3-80 0-110-22-14-12-22-40-20-68z" fill="#7fe0dc" opacity=".45" stroke="#7fe0dc" stroke-width="18" stroke-opacity=".35" filter="url(#mBlur)"/>
+              <g fill="none" stroke="#f3efe6" stroke-linecap="round" stroke-width="1.4">
+                <path class="map-wave" d="M14 30q8-6 16 0t16 0" stroke-opacity=".35"/><path class="map-wave" d="M232 22q8-6 16 0t16 0" stroke-opacity=".35"/><path class="map-wave" d="M20 205q8-6 16 0t16 0" stroke-opacity=".35"/><path class="map-wave" d="M240 212q8-6 16 0t16 0" stroke-opacity=".35"/><path class="map-wave" d="M10 120q8-6 16 0t16 0" stroke-opacity=".3"/><path class="map-wave" d="M262 100q8-6 16 0t16 0" stroke-opacity=".3"/>
+              </g>
+              <path d="M60 120C48 70 92 30 150 28c66-2 108 42 114 92 6 46-22 86-74 90-40 3-80 0-110-22-14-12-22-40-20-68z" fill="#05212c" opacity=".35" transform="translate(3 6)" filter="url(#mBlur)"/>
+              <path d="M60 120C48 70 92 30 150 28c66-2 108 42 114 92 6 46-22 86-74 90-40 3-80 0-110-22-14-12-22-40-20-68z" fill="url(#mSand)" stroke="#fff4d6" stroke-width="3" stroke-linejoin="round"/>
+              <path class="tide-ring" d="M60 120C48 70 92 30 150 28c66-2 108 42 114 92 6 46-22 86-74 90-40 3-80 0-110-22-14-12-22-40-20-68z" fill="none"/>
+              <ellipse cx="150" cy="118" rx="74" ry="50" fill="url(#mJungle)"/>
+              <g fill="#1f5d42" opacity=".85"><circle cx="112" cy="104" r="9"/><circle cx="188" cy="102" r="10"/><circle cx="124" cy="140" r="8"/><circle cx="178" cy="142" r="9"/><circle cx="150" cy="96" r="8"/><circle cx="100" cy="126" r="7"/><circle cx="200" cy="124" r="7"/><circle cx="150" cy="152" r="8"/></g>
+              <g fill="#8fdba9" opacity=".55"><circle cx="109" cy="101" r="4"/><circle cx="185" cy="99" r="4.5"/><circle cx="121" cy="137" r="3.5"/><circle cx="175" cy="139" r="4"/><circle cx="148" cy="93" r="3.5"/></g>
+              <path d="M124 74L150 30l28 44q-14 8-28 6t-26-6z" fill="url(#mRock)"/>
+              <path d="M150 30l28 44q-8 5-16 6l-12-50z" fill="#3e444c" opacity=".4"/>
+              <path d="M143 44l7-14 7 14-4-2-3 4-3-4z" fill="#fff"/>
+              <path d="M50 124q0-24 16-24t16 24z" fill="#1c1c24"/><path d="M58 124q0-14 8-14t8 14z" fill="#000" opacity=".55"/>
+              <g><circle cx="258" cy="182" r="6" fill="url(#mRock)"/><circle cx="270" cy="170" r="4.5" fill="url(#mRock)"/><circle cx="262" cy="196" r="4" fill="url(#mRock)"/><circle class="map-wave" cx="258" cy="182" r="11" fill="none" stroke="#fff" stroke-opacity=".5"/><circle class="map-wave" cx="270" cy="170" r="8" fill="none" stroke="#fff" stroke-opacity=".5"/></g>
+              <g transform="translate(272 34)" opacity=".9"><circle r="13" fill="#05212c" fill-opacity=".4" stroke="#f3efe6" stroke-opacity=".6"/><path d="M0-10l3 10-3 10-3-10z" fill="#f3efe6"/><path d="M0-10l3 10h-6z" fill="#d4783a"/><text y="-16" font-size="7" text-anchor="middle" fill="#f3efe6" font-family="sans-serif">N</text></g>
+              <g stroke="#f3efe6" stroke-opacity=".6" stroke-width="2" stroke-dasharray="4 4" fill="none">
+                <path d="M150 192V120"/><path d="M150 192L242 170"/><path d="M150 120L242 170"/><path d="M150 120L66 112"/><path d="M150 120V52"/><path d="M66 112L150 52"/><path d="M150 52L242 170"/><path d="M66 112L150 192"/><path d="M66 112L242 170"/>
+              </g>
+              <g class="node" data-key="beach" transform="translate(150 192)"><circle class="pin" r="12"/><text class="icon" y="5">🏖️</text><text class="q" y="5">?</text><text class="lbl" y="27">해변</text></g>
+              <g class="node" data-key="jungle" transform="translate(150 120)"><circle class="pin" r="12"/><text class="icon" y="5">🌴</text><text class="q" y="5">?</text><text class="lbl" y="27">밀림</text></g>
+              <g class="node" data-key="reef" transform="translate(242 170)"><circle class="pin" r="12"/><text class="icon" y="5">🌊</text><text class="q" y="5">?</text><text class="lbl" y="27">암초</text></g>
+              <g class="node" data-key="cave" transform="translate(66 112)"><circle class="pin" r="12"/><text class="icon" y="5">🕳️</text><text class="q" y="5">?</text><text class="lbl" y="27">동굴</text></g>
+              <g class="node" data-key="cliff" transform="translate(150 52)"><circle class="pin" r="12"/><text class="icon" y="5">⛰️</text><text class="q" y="5">?</text><text class="lbl" y="27">절벽</text></g>
+              <g id="map-player" style="transform: translate(150px, 192px)">
+                <circle class="pulse" r="15"/>
+                <g class="marker"><path d="M0-14c-8-8-8-20 0-20s8 12 0 20z" fill="#d4783a" stroke="#fff8f0" stroke-width="1.5"/><circle cy="-26" r="2.6" fill="#fff8f0"/></g>
+              </g>
+            </svg>
+            <p class="map-hint" id="map-hint"></p>
+          </section>
+          <h2>해결할 과제</h2>
+          <ul id="goal-list" class="goal-list"></ul>
+          <h2>소지품</h2>
+          <ul id="inventory-list"></ul>
+          <h2 class="sub">상태이상</h2>
+          <div id="status-list" class="status-list"></div>
+          <p class="place-tag">현재 위치 · <span id="place-name">해변</span></p>
+        </aside>
+
+        <main class="story-panel">
+          <!-- 상황별 일러스트를 보여주는 박스 추가 -->
+          
+          <div id="log" class="log" role="log" aria-live="polite"></div>
+          <div id="choices" class="choices"></div>
+        </main>
+      </div>
+    </section>
+
+    <!-- 엔딩 -->
+    <section id="screen-ending" class="screen">
+      <div class="ending-card">
+        <div id="ending-art" class="ending-art" aria-hidden="true"></div>
+        <p class="ending-kicker">엔딩</p>
+        <h2 id="ending-title"></h2>
+        <p id="ending-body" class="ending-body"></p>
+        <p id="ending-meta" class="ending-meta"></p>
+        <div id="ending-stats" class="stats"></div>
+        <div class="cta-row">
+          <button type="button" class="btn primary" id="btn-again">다시 생존하기</button>
+          <button type="button" class="btn ghost" id="btn-to-title">타이틀로</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 게임 종료 확인 모달 -->
+  <dialog id="exit-modal" class="modal exit-modal">
+    <div class="modal-inner">
+      <h2>게임 종료</h2>
+      <p class="modal-desc">현재 생존을 마치고 타이틀 화면으로 돌아갈까요? 저장하지 않은 진행은 복구할 수 없습니다. 브라우저 탭은 열린 상태로 유지됩니다.</p>
+      <div class="exit-actions">
+        <button type="button" class="btn ghost" id="btn-exit-cancel">계속 플레이</button>
+        <button type="button" class="btn primary" id="btn-exit-save">저장 후 종료</button>
+        <button type="button" class="btn exit-danger" id="btn-exit-no-save">저장하지 않고 종료</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 저장/불러오기 모달 -->
+  <dialog id="save-modal" class="modal">
+    <form method="dialog" class="modal-inner">
+      <h2 id="modal-title">저장</h2>
+      <p id="modal-desc" class="modal-desc"></p>
+      <div id="slot-list" class="slot-list"></div>
+      <div class="modal-foot">
+        <button type="submit" class="btn ghost" value="cancel">닫기</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="setup-modal" class="modal setup-modal">
+    <form id="setup-form" class="modal-inner">
+      <h2>생존 준비</h2>
+      <p class="modal-desc">이름과 난이도, 표류 전의 당신을 정하면 게임이 시작됩니다.</p>
+      <div class="setup-fields">
+        <label for="setup-name">이름 <span>최대 12자</span></label>
+        <input id="setup-name" class="name-input" type="text" maxlength="12" autocomplete="off" placeholder="표류자" required />
+        <label for="setup-diff">난이도</label>
+        <select id="setup-diff" class="setup-select">
+          <option value="easy" data-description="체력 72~82, 정신력 65~75로 시작합니다. 자원 소모와 위험 부담이 낮아 생존을 익히기 좋지만 최종 점수 배율은 ×0.8입니다.">쉬움</option>
+          <option value="normal" selected data-description="체력 60~70, 정신력 50~60으로 시작합니다. 자원 관리와 탐험 위험이 균형을 이루는 표준 난이도입니다.">보통</option>
+          <option value="hard" data-description="체력 45~55, 정신력 40~50으로 시작합니다. 자원 소모가 빠르고 폭풍 등 위험 부담이 크지만 최종 점수 배율은 ×1.3입니다.">하드코어</option>
+        </select>
+        <p id="setup-diff-desc" class="setup-role-desc"></p>
+        <p class="setup-time-desc">최종 생존 판정: 쉬움 16일째 · 보통 14일째 · 하드코어 12일째. 목표 날짜가 시작될 때 판정합니다. 직업 특성에 따라 시작 수치는 소폭 달라질 수 있습니다.</p>
+        <label for="setup-role">어떤 사람이었나요?</label>
+        <select id="setup-role" class="setup-select" required></select>
+        <p id="setup-role-desc" class="setup-role-desc"></p>
+      </div>
+      <div class="modal-foot"><button type="submit" class="btn primary">게임 시작</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="gallery-modal" class="modal">
+    <form method="dialog" class="modal-inner">
+      <h2>엔딩 도감</h2>
+      <p class="modal-desc" id="gallery-desc"></p>
+      <div id="gallery-list" class="gallery-list"></div>
+      <div class="modal-foot"><button type="submit" class="btn ghost">닫기</button></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
