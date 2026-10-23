@@ -5,8 +5,6 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const createGame = require("./game-core");
-
-const http = require('http');
 const server = http.createServer((req, res) => { ... });
 const PORT = Number(process.env.PORT) || 3000;
 
