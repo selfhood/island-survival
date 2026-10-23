@@ -135,3 +135,17 @@ npm test      # 서버 로직을 무작위 봇이 40판 끝까지 플레이
 
 
 **해결할 과제 표시** — 왼쪽 과제 목록에서 `뗏목 재료 모으기 x/4`로 표시하며, 과제 문구의 중복·앞뒤 공백은 화면 표시 전에 정규화합니다.
+
+
+## GitHub / Render 배포
+
+1. 이 폴더(`island-3d`) 안의 파일 전체를 Git 저장소 루트에 올립니다.
+2. Render에서 **New + → Web Service**를 선택하고 저장소를 연결합니다.
+3. 설정:
+   - **Root Directory**: 비워 둠 (저장소 루트에 `package.json`이 있을 때)
+   - **Runtime**: Node
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+4. 배포 로그에서 `Server running on port ...`가 출력되는지 확인합니다. Render가 제공하는 `PORT` 환경변수를 서버가 자동 사용합니다.
+
+주의: 현재 `data/`의 세이브/기록은 서버 파일로 저장됩니다. Render의 기본 파일 시스템은 재배포·인스턴스 교체 시 영구 저장을 보장하지 않습니다. 세이브를 영구 보존하려면 Render Persistent Disk를 `/opt/render/project/src/data`에 마운트하거나, 별도 영구 데이터베이스를 사용하세요. 무료 인스턴스에서 디스크 기능/요금은 Render 플랜 정책을 확인하세요.
