@@ -6,8 +6,10 @@ const fs = require("fs");
 const path = require("path");
 const createGame = require("./game-core");
 
+const http = require('http');
+const server = http.createServer((req, res) => { ... });
 const PORT = Number(process.env.PORT) || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
@@ -158,4 +160,5 @@ setInterval(() => {
 }, 600000).unref();
 
 process.on("unhandledRejection", (e) => console.error("처리되지 않은 오류:", e));
-server.listen(PORT, () => console.log(`무인도 표류 서버: http://localhost:${PORT}`));
+// server.listen(PORT, () => console.log(`무인도 표류 서버: http://localhost:${PORT}`)); // local 실행시
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`)); // render같은 서버에서 실행시
